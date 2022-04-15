@@ -134,7 +134,17 @@ def get_question(update, context):
             update.message.reply_text('''Вы - администратор! Уверен, ответы на
 все интересующие вопросы Вы знаете сами)''')
     else:
-        update.message.reply_text(str(BD.get_answer(update.message.text, company)))
+        if update.message.text in list(map(lambda i: i[1].lower(), BD.get_questions(company))):
+            update.message.reply_text(str(BD.get_answer(update.message.text, company)))
+        else:
+            update.message.reply_text('Извините, вопрос не найден.')
+
+
+def all_question(update, context):
+    DB.get_user_company(update.message.from_user.id)
+    for i in BD.get_questions(company):
+        update.message.reply_text(i[0] + ': ' + i[1])
+
 
 
 def input_name_company(update, context):
