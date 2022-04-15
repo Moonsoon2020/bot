@@ -81,7 +81,6 @@ def get_name_company_password(update, context):
         update.message.reply_text('ещё раз')
         update.message.reply_text('команда')
         return 1
-    context.user_data['NameCompany'] = update.message.text
     context.user_data['password'] = a
     return 2
 
@@ -183,7 +182,7 @@ def get_text_mailing(update, context):
     return 3
 
 
-def get_date(update, context):
+def get_date_add(update, context):
     date = update.message.text.split(', ')
     for i in date:
         BD.add_mailing(context['text'], i, context['company'])
@@ -191,8 +190,21 @@ def get_date(update, context):
     return ConversationHandler.END
 
 
-def stop_new_mailing(update, context):
-    update.message.reply_text('остановка добавления рассылки')
+def del_mailing(update, context):
+    update.message.reply_text('какая компания')
+    return 1
+
+
+def get_date_del(update, context):
+    date = update.message.text.split(', ')
+    for i in date:
+        BD.delete_mailing(context['text'], i, context['company'])
+    update.message.reply_text('ок. всё ок')
+    return ConversationHandler.END
+
+
+def stop_del_mailing(update, context):
+    update.message.reply_text('остановка удаления рассылки')
     return ConversationHandler.END
 
 
@@ -257,6 +269,21 @@ def main():  #
         fallbacks=[CommandHandler('stop', stop_new_mailing, pass_user_data=True)]
     )
     dp.add_handler(script_adding_mailing_lists)
+    script_del_mailing_lists = ConversationHandler(
+        # Точка входа в диалог.
+        # В данном случае — команда /start. Она задаёт первый вопрос.
+        entry_points=[CommandHandler('del_mailing', add_mailing, pass_user_data=True)],
+        # Состояние внутри диалога.
+        states={
+            1: [MessageHandler(Filters.text & ~Filters.command, what_company, pass_user_data=True)],
+            2: [MessageHandler(Filters.text & ~Filters.command, get_text_mailing, pass_user_data=True)],
+            3: [MessageHandler(Filters.text & ~Filters.command, get_date_del, pass_user_data=True)]
+        },
+        # Точка прерывания диалога. В данном случае — команда /stop.
+        fallbacks=[CommandHandler('stop', stop_вуд_mailing, pass_user_data=True)]
+    )
+    dp.add_handler(script_del_mailing_lists)
+
     # самый низ
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, get_question))
     updater.start_polling()
