@@ -92,8 +92,7 @@ def get_pass(update, context):
         update.message.reply_text('ещё раз')
         update.message.reply_text('команда')
         return 1
-
-    update.message.from_user.id  # нужный шв
+    BD.remove_user_company(str(update.message.from_user.id), context.user_data['NameCompany'])
     return ConversationHandler.END
 
 
@@ -107,13 +106,15 @@ def checking_status(update):
 
 
 def unbinding_company(update, context):
-    # отвязка по конкретному шв
-    pass
+    BD.remove_user_company(str(update.message.from_user.id), '')
 
 
 def get_question(update, context):
-    # отпрвляется шв по нему находится компания, по ней ищется вопрос + проверка компании
-    pass
+    company = BD.get_user_company(str(update.message.from_user.id))
+    if company in None:
+        update.message.reply_text('нет компании')
+    else:
+        update.message.reply_text(str(BD.get_answer(update.message.text, company)))
 
 
 def get_name_company(update, context):

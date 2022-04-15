@@ -133,6 +133,10 @@ class DB:
         return self.con.cursor().execute(f'''SELECT post FROM Users
                  WHERE id_tg = \'{id_tg}\'''').fetchall()[0][0]
 
+    def get_user_company(self, id_tg):
+        return self.con.cursor().execute(f'''SELECT company FROM Users
+                 WHERE id_tg = \'{id_tg}\'''').fetchall()[0][0]
+
 # bd = DB()
 # bd.add_company('a', 'b', 'c')
 # bd.add_user('a', 'b', 'c', 1, '1234wer')
