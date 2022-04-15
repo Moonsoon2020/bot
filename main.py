@@ -228,13 +228,19 @@ def creating_question(update, context):
 
 
 def stop_question_add(update, context):
-    BD.add_question(context.user_data['question'], context.user_data['answer'], update.message.text)
     update.message.reply_text('остановка ')
     return ConversationHandler.END
 
 
 def write_question(update, context):
-    BD.add_question()
+    BD.add_question(context.user_data['question'], context.user_data['answer'], update.message.text)
+    update.message.reply_text('остановка ')
+    return ConversationHandler.END
+
+
+def no_write_question(update, context):
+    BD.delete_question(context.user_data['question'], context.user_data['answer'], update.message.text)
+    update.message.reply_text('остановка ')
     return ConversationHandler.END
 
 
@@ -340,6 +346,21 @@ def main():  #
         fallbacks=[CommandHandler('stop', stop_question_add, pass_user_data=True)]
     )
     dp.add_handler(script_add_question_lists)
+
+    script_del_question_lists = ConversationHandler(
+        # Точка входа в диалог.
+        # В данном случае — команда /start. Она задаёт первый вопрос.
+        entry_points=[CommandHandler('del_question', add_question, pass_user_data=True)],
+        # Состояние внутри диалога.
+        states={
+            1: [MessageHandler(Filters.text & ~Filters.command, add_answer, pass_user_data=True)],
+            2: [MessageHandler(Filters.text & ~Filters.command, creating_question, pass_user_data=True)],
+            3: [[MessageHandler(Filters.text & ~Filters.command, no_write_question, pass_user_data=True)]]
+        },
+        # Точка прерывания диалога. В данном случае — команда /stop.
+        fallbacks=[CommandHandler('stop', stop_question_add, pass_user_data=True)]
+    )
+    dp.add_handler(script_del_question_lists)
     # самый низ
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, get_question))
     updater.start_polling()
