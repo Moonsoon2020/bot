@@ -1,19 +1,12 @@
 from datetime import datetime
 import sqlite3
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class DB:
-    def a(self, *r):
-        logger.info(';'.join([str(i) for i in r]))
-
     def __init__(self):
         self.con = sqlite3.connect('db_For_TGbot.sqlite', check_same_thread=False)
 
     def add_user(self, surname, name, patronymic, post, id_tg):  # добавление пользователя
-        self.a(surname, name,patronymic, post,id_tg)
         self.con.cursor().execute(f'''INSERT INTO Users(surname, name, patronymic, post, id_tg)
          VALUES ('{surname}', '{name}', '{patronymic}', {post}, '{id_tg}')''')
         self.con.commit()
@@ -26,6 +19,13 @@ class DB:
     def delete_company(self, title):  # удаление компании
         self.con.cursor().execute(f'''DELETE from Companies 
         WHERE title = \'{title}\'''')
+        self.con.cursor().execute(f'''DELETE from Mailings
+                WHERE company = \'{title}\'''')
+        self.con.cursor().execute(f'''DELETE from Questions
+                WHERE company = \'{title}\'''')
+        self.con.cursor().execute(f'''UPDATE Users
+                SET company = ''
+                WHERE company = \'{title}\'''')
         self.con.commit()
 
     def check_mailing(self, text, date, company):  # проверка наличия уведомления
@@ -129,18 +129,21 @@ class DB:
         return [(x[0], self.get_ids(x[1])) for x in self.con.cursor().execute(f'''SELECT text, company FROM Mailings
                 WHERE date = \'{day}\'''').fetchall()]
 
-    def get_user_post(self, id_tg):
+    def get_user_post(self, id_tg):  # получение должности пользователя
         return self.con.cursor().execute(f'''SELECT post FROM Users
                  WHERE id_tg = \'{id_tg}\'''').fetchall()[0][0]
 
-    def get_user_company(self, id_tg):
+    def get_user_company(self, id_tg):  # получение компании, в которой пользователь
         return self.con.cursor().execute(f'''SELECT company FROM Users
                  WHERE id_tg = \'{id_tg}\'''').fetchall()[0][0]
 
+
 # bd = DB()
+# print(bd.get_user_company('1234wer'))
+# print(bd.get_user_post('1234wer'))
 # bd.add_company('a', 'b', 'c')
 # bd.add_user('a', 'b', 'c', 1, '1234wer')
-# bd.delete_company('a')
+# bd.delete_company('A')
 # bd.add_mailing('b', '15.04.2022', 'A')
 # print(bd.check_mailing('a', '01.01.01', 'A'))
 # bd.delete_mailing('a', '01.01.01', 'A')

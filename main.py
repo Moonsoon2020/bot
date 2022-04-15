@@ -163,9 +163,25 @@ def delete_comp(update, context):
 
 def helps(update, context):
     if checking_status(update):
-        update.message.reply_text('помощь админка')
+        update.message.reply_text('Привет, уважаемый пользователь - Admin.\n'
+                                  '/stop используется для остановки любого процесса, в котором бы вы не находились.\n '
+                                  '/creating_company используется для создания новой компании.\n'
+                                  'Данные, используемые при создании компании: название компании, её уникальный '
+                                  'пароль, номер телефона.\n '
+                                  '/delete_company используется для удаления уже существующей компании. Для удаления '
+                                  'необходимо только название.\n '
+                                  '/add_mailing используется для создания новой рассылки. Для её создания необходимы \n'
+                                  '/delete_mailing используется для удаления рассылки.\n'
+                                  '/add_question используется для создания нового вопроса.\n'
+                                  '/delete_question используется для удаления вопроса.\n')
     else:
-        update.message.reply_text('помощь пользователя')
+        update.message.reply_text('Привет, уважаемый пользователь.\n'
+                                  '/stop используется для остановки любого процесса, в котором вы не находились.\n'
+                                  '/reg_company используется для регистрации в какой-либо компании.\n'
+                                  '/unbinding используется для отключения вас от вашей компании\n'
+                                  '/all_question при вызове возвращаются все вопросы, реализованные для вашей '
+                                  'компании.\n '
+                                  'Все остальное бот будет принимать как вопрос, заданный вами.')
 
 
 def add_mailing(update, context):
@@ -301,7 +317,6 @@ def main():  #
         fallbacks=[CommandHandler('stop', stop_new_company, pass_user_data=True)]
     )
     dp.add_handler(script_creature_company)
-    dp.add_handler(CommandHandler("delete_company", delete_company))
     dp.add_handler(CommandHandler("help", helps))
     script_adding_mailing_lists = ConversationHandler(
         # Точка входа в диалог.
