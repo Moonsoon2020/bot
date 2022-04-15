@@ -9,7 +9,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-TOKEN = '5355485794:AAGBNp_ZMuEw8vK1t9UiuuDOV8yOY0OQN_E'
+TOKEN = '5342995443:AAEBqyRLrd5AmHEEhCNLyfHVy3td3Qvw-Ec'
 SUPER_PASSWORD = '0000'
 BD = DB()
 
@@ -194,10 +194,17 @@ def helps(update, context):
                                   'пароль, номер телефона.\n '
                                   '/delete_company используется для удаления уже существующей компании. Для удаления '
                                   'необходимо только название.\n '
-                                  '/add_mailing используется для создания новой рассылки. Для её создания необходимы \n'
-                                  '/delete_mailing используется для удаления рассылки.\n'
-                                  '/add_question используется для создания нового вопроса.\n'
-                                  '/delete_question используется для удаления вопроса.\n')
+                                  '/add_mailing используется для создания новой рассылки. Для её создания необходимо '
+                                  'несколько элементов: компания, текст, даты отправления.\n '
+                                  '/delete_mailing используется для удаления рассылки. Для её удаления необходимо '
+                                  'несколько элементов: компания, текст, дата отправления.\n'
+                                  '/add_question используется для создания нового вопроса. Для его создания необходимо '
+                                  'несколько элементов: компания, текст вопроса, текст ответа.\n'
+                                  '/redact_question используется для редактирования существующего вопроса. Для его '
+                                  'редактирования необходимо'
+                                  'несколько элементов: компания, текст вопроса, изменённый текст ответа.\n'
+                                  '/delete_question используется для удаления вопроса. Для его удаления необходимо '
+                                  'несколько элементов: компания, текст вопроса, текст ответа.\n')
     else:
         update.message.reply_text('Привет, уважаемый пользователь.\n'
                                   '/stop используется для остановки любого процесса, в котором вы не находились.\n'
@@ -206,7 +213,6 @@ def helps(update, context):
                                   '/all_question при вызове возвращаются все вопросы, реализованные для вашей '
                                   'компании.\n '
                                   'Все остальное бот будет принимать как вопрос, заданный вами.')
-
 
 
 def add_mailing(update, context):
@@ -275,6 +281,8 @@ def add_answer(update, context):
 def creating_question(update, context):
     context.user_data['answer'] = update.message.text
     update.message.reply_text('Введите компанию, участники которой могут задать вопрос.')
+    print(context.user_data['question'], context.user_data['answer'], a)
+
     return 3
 
 
@@ -285,7 +293,6 @@ def stop_question_add(update, context):
 
 def write_question_add(update, context):
     a = update.message.text
-    print(context.user_data['question'], context.user_data['answer'], a)
     BD.add_question(context.user_data['question'], context.user_data['answer'], a)
 
     update.message.reply_text('Вопрос добавлен.')
@@ -402,7 +409,7 @@ def main():  #
         states={
             1: [MessageHandler(Filters.text & ~Filters.command, add_answer, pass_user_data=True)],
             2: [MessageHandler(Filters.text & ~Filters.command, creating_question, pass_user_data=True)],
-            3: [[MessageHandler(Filters.text & ~Filters.command, write_question_add, pass_user_data=True)]]
+            3: [MessageHandler(Filters.text & ~Filters.command, write_question_add, pass_user_data=True)]
         },
         # Точка прерывания диалога. В данном случае — команда /stop.
         fallbacks=[CommandHandler('stop', stop_question_add, pass_user_data=True)]
@@ -417,7 +424,7 @@ def main():  #
         states={
             1: [MessageHandler(Filters.text & ~Filters.command, add_answer, pass_user_data=True)],
             2: [MessageHandler(Filters.text & ~Filters.command, creating_question, pass_user_data=True)],
-            3: [[MessageHandler(Filters.text & ~Filters.command, write_question_del, pass_user_data=True)]]
+            3: [MessageHandler(Filters.text & ~Filters.command, write_question_del, pass_user_data=True)]
         },
         # Точка прерывания диалога. В данном случае — команда /stop.
         fallbacks=[CommandHandler('stop', stop_question_add, pass_user_data=True)]
@@ -432,7 +439,7 @@ def main():  #
         states={
             1: [MessageHandler(Filters.text & ~Filters.command, add_answer, pass_user_data=True)],
             2: [MessageHandler(Filters.text & ~Filters.command, creating_question, pass_user_data=True)],
-            3: [[MessageHandler(Filters.text & ~Filters.command, write_question_red, pass_user_data=True)]]
+            3: [MessageHandler(Filters.text & ~Filters.command, write_question_red, pass_user_data=True)]
         },
         # Точка прерывания диалога. В данном случае — команда /stop.
         fallbacks=[CommandHandler('stop', stop_question_add, pass_user_data=True)]
