@@ -1,6 +1,7 @@
 import logging
 import threading
 import xlsxwriter
+import requests
 import schedule
 import telegram.ext
 from telegram import ReplyKeyboardMarkup
@@ -8,16 +9,16 @@ from telegram.ext import Updater, MessageHandler, Filters, ConversationHandler
 from telegram.ext import CommandHandler
 from for_DBwork import DB
 
-# Импорт необходимых библиотек.
+# Импорт необходимых библиотек
 # Запускаем логгирование
 logging.basicConfig(filename='logging.log',
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG
-)
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG
+                    )
 
 logger = logging.getLogger(__name__)
 TOKEN = '5355485794:AAGBNp_ZMuEw8vK1t9UiuuDOV8yOY0OQN_E'  # токен бота
-# TOKEN = '5342995443:AAEBqyRLrd5AmHEEhCNLyfHVy3td3Qvw-Ec'
-SUPER_PASSWORD = '0000'  # пароль для админа
+# TOKEN = '5342995443:AAEBqyRLrd5AmHEEhCNLyfHVy3td3Qvw-Ec' # мой токен
+SUPER_PASSWORD = 'Admin777'  # пароль для админа
 BD = DB()  # подключение к БД
 
 
@@ -133,9 +134,11 @@ def entering_info(update, context):  # добавление ФИО
     fio = context.user_data['ФИО'].split()
     logger.info(str(fio) + str(context.user_data['Post']))
     if len(fio) == 3:
-        BD.add_user(fio[0].capitalize(), fio[1].capitalize(), fio[2].capitalize(), context.user_data['Post'], str(update.message.from_user.id))
+        BD.add_user(fio[0].capitalize(), fio[1].capitalize(), fio[2].capitalize(), context.user_data['Post'],
+                    str(update.message.from_user.id))
     elif len(fio) == 2:
-        BD.add_user(fio[0].capitalize(), fio[1].capitalize(), '', context.user_data['Post'], str(update.message.from_user.id))
+        BD.add_user(fio[0].capitalize(), fio[1].capitalize(), '', context.user_data['Post'],
+                    str(update.message.from_user.id))
     else:
         update.message.reply_text('Неверно введены данные.')
         update.message.reply_text('''Готов произвести регистрацию.
@@ -163,13 +166,15 @@ def reg_in_company(update, context):  # регистрация в компани
 
 def creating_question(update, context):  # создание вопроса
     context.user_data['answer'] = update.message.text.capitalize()
-    update.message.reply_text(f'{BD.get_user_name(str(update.message.from_user.id))}, введите компанию, участники которой могут задать вопрос.')
+    update.message.reply_text(
+        f'{BD.get_user_name(str(update.message.from_user.id))}, введите компанию, участники которой могут задать вопрос.')
     return 3
 
 
 def linking_company(update, context):  # регистрация в компании
     logger.info('привязка к компании')
-    update.message.reply_text(f'''{BD.get_user_name(str(update.message.from_user.id))}, введите название компании, в которую хотите вступить.''')
+    update.message.reply_text(
+        f'''{BD.get_user_name(str(update.message.from_user.id))}, введите название компании, в которую хотите вступить.''')
     return 1
 
 
@@ -186,7 +191,8 @@ def get_name_company_password(update, context):  # регистрация в к�
         update.message.reply_text('''Произошла ошибка: Компании с таким
 названием не существует.
 Проверьте введенные данные.''')
-        update.message.reply_text(f'''{BD.get_user_name(str(update.message.from_user.id))}, введите название компании, в которую хотите вступить.''')
+        update.message.reply_text(
+            f'''{BD.get_user_name(str(update.message.from_user.id))}, введите название компании, в которую хотите вступить.''')
         return 1
     context.user_data['PasswordCompany'] = BD.get_company_password(context.user_data['NameCompany'])
     update.message.reply_text('Компания найдена. Введите пароль.')
@@ -199,7 +205,7 @@ def write_question_add(update, context):  # добавление вопроса
 
 
 def get_pass(update, context):  # регистрация в компании
-    if context.user_data['PasswordCompany'] != update.message.text.capitalize():
+    if context.user_data['PasswordCompany'] != update.message.text:
         update.message.reply_text('Возникла ошибка: введен неверный пароль.')
         update.message.reply_text('Компания найдена. Введите пароль.')
         return 1
@@ -227,7 +233,8 @@ def get_question(update, context):  # получить ответ
     company = BD.get_user_company(str(update.message.from_user.id))
     if company == None:
         if BD.get_user_post(str(update.message.from_user.id)) == 0:
-            update.message.reply_text(f'{BD.get_user_name(str(update.message.from_user.id))}, Вы не можете получить ответ, так как не состоите в компании.')
+            update.message.reply_text(
+                f'{BD.get_user_name(str(update.message.from_user.id))}, Вы не можете получить ответ, так как не состоите в компании.')
         else:
             update.message.reply_text(f'''{BD.get_user_name(str(update.message.from_user.id))}, Вы - администратор! Уверен, ответы на
 все интересующие вопросы Вы знаете сами)''')
@@ -260,7 +267,7 @@ def input_get_telephone(update, context):  # создание компании
 
 
 def creating_company(update, context):  # создание компании
-    BD.add_company(context.user_data['title'].capitalize(), update.message.text, context.user_data['password'])
+    BD.add_company(context.user_data['title'], update.message.text, context.user_data['password'])
     update.message.reply_text('Успешно! Компания создана, а Вы её администратор.')
     context.user_data.clear()
     return ConversationHandler.END
@@ -288,48 +295,53 @@ def delete_comp(update, context):  # удаление компании
 
 def helps(update, context):  # помощь
     if checking_status(update):
-        update.message.reply_text(f'Привет, уважаемый пользователь, {BD.get_user_name(str(update.message.from_user.id))}, Ваша роль - Admin.\n'
-                                  'Доступные Вам функции:\n'
-                                  '/get_xlsx_file - получить Excel таблицу со всеми данными для просмотра и диагностики\n'
-                                  '/stop используется для остановки любого процесса, в котором бы вы не находились.\n '
-                                  '/creating_company используется для создания новой компании.\n'
-                                  'Данные, используемые при создании компании: название компании, её уникальный '
-                                  'пароль, номер телефона.\n '
-                                  '/edit_post изменить/выбрать роль.\n'
-                                  '/delete_company используется для удаления уже существующей компании. Для удаления '
-                                  'необходимо только название.\n '
-                                  '/add_mailing используется для создания новой рассылки. Для её создания необходимо '
-                                  'несколько элементов: компания, текст, даты отправления.\n '
-                                  '/delete_mailing используется для удаления рассылки. Для её удаления необходимо '
-                                  'несколько элементов: компания, текст, дата отправления.\n'
-                                  '/add_question используется для создания нового вопроса. Для его создания необходимо '
-                                  'несколько элементов: компания, текст вопроса, текст ответа.\n'
-                                  '/redact_question используется для редактирования существующего вопроса. Для его '
-                                  'редактирования необходимо'
-                                  'несколько элементов: компания, текст вопроса, изменённый текст ответа.\n'
-                                  '/delete_question используется для удаления вопроса. Для его удаления необходимо '
-                                  'несколько элементов: компания, текст вопроса, текст ответа.\n'
-                                  'Приятного использования!')
+        update.message.reply_text(
+            f'Привет, уважаемый пользователь, {BD.get_user_name(str(update.message.from_user.id))}, Ваша роль - Admin.\n'
+            'Доступные Вам функции:\n'
+            '/geocoder - Узнать адрес компании\n'
+            '/get_xlsx_file - получить Excel таблицу со всеми данными для просмотра и диагностики\n'
+            '/stop используется для остановки любого процесса, в котором бы вы не находились.\n '
+            '/creating_company используется для создания новой компании.\n'
+            'Данные, используемые при создании компании: название компании, её уникальный '
+            'пароль, номер телефона.\n '
+            '/edit_post изменить/выбрать роль.\n'
+            '/delete_company используется для удаления уже существующей компании. Для удаления '
+            'необходимо только название.\n '
+            '/add_mailing используется для создания новой рассылки. Для её создания необходимо '
+            'несколько элементов: компания, текст, даты отправления.\n '
+            '/delete_mailing используется для удаления рассылки. Для её удаления необходимо '
+            'несколько элементов: компания, текст, дата отправления.\n'
+            '/add_question используется для создания нового вопроса. Для его создания необходимо '
+            'несколько элементов: компания, текст вопроса, текст ответа.\n'
+            '/redact_question используется для редактирования существующего вопроса. Для его '
+            'редактирования необходимо'
+            'несколько элементов: компания, текст вопроса, изменённый текст ответа.\n'
+            '/delete_question используется для удаления вопроса. Для его удаления необходимо '
+            'несколько элементов: компания, текст вопроса, текст ответа.\n'
+            'Приятного использования!')
     else:
-        update.message.reply_text(f'Привет, уважаемый пользователь, {BD.get_user_name(str(update.message.from_user.id))}.\n'
-                                  'Доступные Вам функции:\n'
-                                  '/stop используется для остановки любого процесса, в котором Вы находитесь.\n'
-                                  '/reg_company используется для регистрации в какой-либо компании.\n'
-                                  '/edit_post изменить/выбрать роль.\n'
-                                  '/unbinding используется для отключения Вас от вашей компании\n'
-                                  '/all_question при вызове возвращаются все вопросы, реализованные для Вашей '
-                                  'компании.\n '
-                                  'Все остальное бот будет принимать как вопрос, заданный Вами.\n'
-                                  'Приятного использования!')
+        update.message.reply_text(
+            f'Привет, уважаемый пользователь, {BD.get_user_name(str(update.message.from_user.id))}.\n'
+            'Доступные Вам функции:\n'
+            '/geocoder - Узнать адрес компании\n'
+            '/stop используется для остановки любого процесса, в котором Вы находитесь.\n'
+            '/reg_company используется для регистрации в какой-либо компании.\n'
+            '/edit_post изменить/выбрать роль.\n'
+            '/unbinding используется для отключения Вас от вашей компании\n'
+            '/all_question при вызове возвращаются все вопросы, реализованные для Вашей '
+            'компании.\n '
+            'Все остальное бот будет принимать как вопрос, заданный Вами.\n'
+            'Приятного использования!')
 
 
 def add_mailing(update, context):  # добавление рассылки
-    update.message.reply_text(f'{BD.get_user_name(str(update.message.from_user.id))}, уведомления для пользователей какой компании Вы хотите добавить/удалить?')
+    update.message.reply_text(
+        f'{BD.get_user_name(str(update.message.from_user.id))}, уведомления для пользователей какой компании Вы хотите добавить/удалить?')
     return 1
 
 
 def what_company(update, context):  # определение компании
-    company = update.message.text.capitalize()
+    company = update.message.text
     if BD.check_company(company):
         context.user_data['company'] = company
         update.message.reply_text('Какое сообщение хотите, чтоб отправлялось/удалялось?')
@@ -341,7 +353,7 @@ def what_company(update, context):  # определение компании
 
 
 def get_text_mailing(update, context):  # редактирование рассылки
-    context.user_data['text'] = update.message.text.capitalize()
+    context.user_data['text'] = update.message.text
     update.message.reply_text('''В какую(-ые) даты отправлять или уведомления в какую дату удалить? 
 Вводите через запятую с пробелом, в формете день.месяц.год.
 Например: 25.05.2022, 23.02.2023''')
@@ -354,7 +366,8 @@ def all_question(update, context):  # получение всех вопросо
     if a:
         update.message.reply_text('\n'.join([str(x[0] + 1) + '. ' + x[1][0].capitalize() for x in a]))
     else:
-        update.message.reply_text(f'{BD.get_user_name(str(update.message.from_user.id))}, для Вашей компании не реализованны вопросы.')
+        update.message.reply_text(
+            f'{BD.get_user_name(str(update.message.from_user.id))}, для Вашей компании не реализованны вопросы.')
 
 
 def get_date_add(update, context):  # добавление рассылки
@@ -384,12 +397,14 @@ def stop_del_mailing(update, context):  # завершение
 
 
 def add_question(update, context):  # редактирование вопроса
-    update.message.reply_text(f'{BD.get_user_name(str(update.message.from_user.id))}, введите вопрос, который нужно добавить/редактировать/удалить.')
+    update.message.reply_text(
+        f'{BD.get_user_name(str(update.message.from_user.id))}, введите вопрос, который нужно добавить/редактировать/удалить.')
     return 1
 
 
 def edit_post(update, context):  # редактирование роли
-    update.message.reply_text(f'{BD.get_user_name(str(update.message.from_user.id))}, введите роль, которую хотите установить. (Клиент, Админ)')
+    update.message.reply_text(
+        f'{BD.get_user_name(str(update.message.from_user.id))}, введите роль, которую хотите установить. (Клиент, Админ)')
     return 1
 
 
@@ -426,7 +441,8 @@ def write_question_add(update, context):  # добавление вопроса
 def write_question_red(update, context):  # редактирование вопроса
     context.user_data['company'] = update.message.text.capitalize()
     if BD.check_question(context.user_data['question'].capitalize(), context.user_data['company']):
-        BD.redact_question(context.user_data['question'].capitalize(), context.user_data['answer'].capitalize(), update.message.text.capitalize())
+        BD.redact_question(context.user_data['question'].capitalize(), context.user_data['answer'].capitalize(),
+                           update.message.text.capitalize())
     else:
         update.message.reply_text('Ошибка: данного вопроса у данной компании не существует.')
         update.message.reply_text('Введите вопрос, который нужно добавить/редактировать/удалить.')
@@ -437,8 +453,10 @@ def write_question_red(update, context):  # редактирование воп�
 
 def write_question_del(update, context):  # удаление вопроса
     context.user_data['company'] = update.message.text.capitalize()
-    if BD.check_question_all(context.user_data['question'].capitalize(), context.user_data['answer'].capitalize(), context.user_data['company'].capitalize()):
-        BD.delete_question(context.user_data['question'].capitalize(), context.user_data['answer'].capitalize(), context.user_data['company'].capitalize())
+    if BD.check_question_all(context.user_data['question'].capitalize(), context.user_data['answer'].capitalize(),
+                             context.user_data['company'].capitalize()):
+        BD.delete_question(context.user_data['question'].capitalize(), context.user_data['answer'].capitalize(),
+                           context.user_data['company'].capitalize())
     else:
         update.message.reply_text('Ошибка: вопроса с такими характеристиками не существует.')
         update.message.reply_text('Введите вопрос, который нужно добавить/редактировать/удалить.')
@@ -471,6 +489,31 @@ def send_messange(dp):  # отправление рассылки
             telegram.ext.CallbackContext(dp).bot.sendMessage(chat_id=id_, text=text)
 
 
+def geocoder(update, context):
+    update.message.reply_text('''Узнаю адрес компании...''')
+    geocoder_uri = geocoder_request_template = "http://geocode-maps.yandex.ru/1.x/"
+    response = requests.get(geocoder_uri, params={
+        "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
+        "format": "json",
+        "geocode": "Нижний Новгород"
+    })
+
+    toponym = response.json()["response"]["GeoObjectCollection"][
+        "featureMember"][0]["GeoObject"]
+    toponym_coodrinates = toponym["Point"]["pos"]
+    toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+    delta = "0.045"
+    ll = ",".join([toponym_longitude, toponym_lattitude])
+    spn = ",".join([delta, delta])
+
+    static_api_request = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l=map"
+    context.bot.send_photo(
+        update.message.chat_id,
+        static_api_request,
+        caption="В просторах интернета сказано, что агенство находится в Нижнем Новгороде (точного адреса нет)"
+    )
+
+
 def thr():  # второй поток для рассылки
     while True:
         schedule.run_pending()
@@ -481,7 +524,7 @@ def main():  # основной поток, функция
     dp = updater.dispatcher
 
     # schedule.every(7).seconds.do(send_messange, dp)
-    schedule.every().day.at("12:00").do(send_messange, dp)  # рассылка уведомлений
+    schedule.every().day.at("16:30").do(send_messange, dp)  # рассылка уведомлений
     threading.Thread(target=thr).start()
     # сценарии
     script_registration = ConversationHandler(
@@ -514,6 +557,7 @@ def main():  # основной поток, функция
     dp.add_handler(script_linking_company)
     dp.add_handler(CommandHandler("unbinding", unbinding_company))
     dp.add_handler(CommandHandler("help", helps))
+    dp.add_handler(CommandHandler("geocoder", geocoder))
     dp.add_handler(CommandHandler("get_xlsx_file", get_file))
     reply_keyboard = [['/help', '/stop']]
     global markup
